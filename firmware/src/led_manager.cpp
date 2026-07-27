@@ -42,3 +42,11 @@ void LedManager::applyAndShow() {
     fill_solid(leds, LED_STRIP_COUNT, CRGB(_lastR, _lastG, _lastB));
     FastLED.show();
 }
+
+CRGB* LedManager::rawLeds() {
+    return leds;
+}
+
+void LedManager::show() {
+    FastLED.show();
+}

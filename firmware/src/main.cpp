@@ -2,6 +2,7 @@
 #include "config.h"
 #include "ble_manager.h"
 #include "led_manager.h"
+#include "effects_engine.h"
 
 // Single source of truth for device state. LED manager, effects engine,
 // and scheduler (added in later phases) will all read/write this struct
@@ -27,7 +28,11 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
                 state.r = payload[0];
                 state.g = payload[1];
                 state.b = payload[2];
-                ledManager.setSolidColor(state.r, state.g, state.b);
+                if (state.effectId == EFFECT_SOLID) {
+                    ledManager.setSolidColor(state.r, state.g, state.b);
+                } else {
+                    effectsEngine.setColor(state.r, state.g, state.b);
+                }
                 Serial.printf("[CMD] SET_COLOR -> R:%d G:%d B:%d\n", state.r, state.g, state.b);
             }
             break;
@@ -43,6 +48,17 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
         case OP_SET_EFFECT:
             if (len >= 1) {
                 state.effectId = payload[0];
+                if (state.effectId == EFFECT_SOLID) {
+                    // Leaving an animated effect: restore the user's actual
+                    // brightness (breathing overrides it while running) and
+                    // repaint the solid color.
+                    ledManager.setBrightness(state.brightness);
+                    ledManager.setSolidColor(state.r, state.g, state.b);
+                } else {
+                    effectsEngine.setEffect(state.effectId);
+                    effectsEngine.setColor(state.r, state.g, state.b);
+                    effectsEngine.setSpeed(state.speed);
+                }
                 Serial.printf("[CMD] SET_EFFECT -> %d\n", state.effectId);
             }
             break;
@@ -50,6 +66,7 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
         case OP_SET_SPEED:
             if (len >= 1) {
                 state.speed = payload[0];
+                effectsEngine.setSpeed(state.speed);
                 Serial.printf("[CMD] SET_SPEED -> %d\n", state.speed);
             }
             break;
@@ -77,6 +94,7 @@ void setup() {
     Serial.println("\n[BOOT] BLE Smart LED Controller — firmware starting");
 
     ledManager.begin();
+    effectsEngine.begin(ledManager.rawLeds(), ledManager.ledCount());
 
     bleManager.setCommandHandler(onCommand);
     bleManager.begin(&state);
@@ -85,7 +103,11 @@ void setup() {
 }
 
 void loop() {
-    // Phase 1: nothing time-based yet. Effects engine (Phase 3) and
-    // scheduler (Phase 5) will need non-blocking millis()-based ticking
-    // here — no delay() calls, ever, once LEDs are driven.
+    // Non-blocking by design: effectsEngine.tick() rate-limits itself
+    // internally and returns immediately when idle, so this never stalls
+    // BLE command processing (NimBLE runs on its own task, but keeping
+    // loop() fast is still good practice for future additions here).
+    if (state.power && state.effectId != EFFECT_SOLID) {
+        effectsEngine.tick(millis());
+    }
 }

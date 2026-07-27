@@ -76,6 +76,25 @@ Byte 6:   speed
 Byte 7:   error_code   (0 = ok)
 ```
 
+## Effects engine design (Phase 3)
+
+`EffectsEngine` writes directly into `LedManager`'s pixel buffer and is
+driven from `loop()` via a single `tick(millis())` call — there is no
+`delay()` anywhere in the animation path, since a blocked `loop()` would
+also stall other future firmware work sharing the main task.
+
+- **Speed → frame interval**: `speed` (0-255) maps to a frame interval
+  between 80ms (slow) and 8ms (fast); `tick()` no-ops until that interval
+  has elapsed, so effects self-throttle without blocking.
+- **Effect registry**: `EffectId` enum (`SOLID`, `RAINBOW`, `BREATHING`,
+  `CHASE`, `FIRE`) — adding a new effect means adding an enum value and a
+  `step*()` method, no changes to the dispatch/BLE layer.
+- **Fire** uses a classic Fire2012-style heat-diffusion algorithm sized to
+  whatever `LED_STRIP_COUNT` is configured.
+- **Breathing** temporarily overrides the strip's global brightness with
+  a sine pulse (`beatsin8`) while active; switching back to `SOLID`
+  restores the user's actual brightness setting.
+
 ## Firmware modules
 
 - `ble_manager` — advertising, GATT setup, command parsing, notify dispatch
