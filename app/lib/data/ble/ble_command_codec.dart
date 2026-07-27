@@ -15,6 +15,7 @@ class BleCommandCodec {
   static const int opSetSpeed = 0x05;
   static const int opSetSchedule = 0x06;
   static const int opRequestStatus = 0x07;
+  static const int opSyncTime = 0x08;
 
   static List<int> _build(int opcode, List<int> payload) {
     final packet = <int>[opcode, payload.length, ...payload];
@@ -48,6 +49,20 @@ class BleCommandCodec {
       _build(opSetSchedule, [action, hour, minute, repeatMask]);
 
   static List<int> requestStatus() => _build(opRequestStatus, const []);
+
+  /// Syncs the firmware's lightweight wall clock. See Scheduler in
+  /// firmware/include/scheduler.h for why this is "current local time"
+  /// rather than an epoch timestamp — there's no RTC/WiFi in scope, so
+  /// epoch+timezone handling would add complexity without real benefit.
+  /// weekday: 0 = Sunday ... 6 = Saturday (matches Dart's
+  /// `DateTime.weekday % 7`).
+  static List<int> syncTime({
+    required int hour,
+    required int minute,
+    required int second,
+    required int weekday,
+  }) =>
+      _build(opSyncTime, [hour, minute, second, weekday]);
 
   /// Decodes a Status characteristic notify payload:
   /// [power, r, g, b, brightness, effectId, speed, errorCode]

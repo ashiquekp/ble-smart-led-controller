@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../connection/connection_screen.dart';
 import '../connection/providers/connection_provider.dart';
 import '../../domain/models/connection_status.dart';
+import '../scheduling/scheduling_screen.dart';
 import 'providers/led_control_provider.dart';
 import 'widgets/brightness_slider.dart';
 import 'widgets/color_wheel_section.dart';
@@ -69,6 +70,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       appBar: AppBar(
         title: const Text('Lighting control'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.schedule),
+            tooltip: 'Schedule',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SchedulingScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.bluetooth_disabled),
             tooltip: 'Disconnect',
