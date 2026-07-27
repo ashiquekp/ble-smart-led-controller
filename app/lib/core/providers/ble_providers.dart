@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/ble/flutter_blue_plus_repository.dart';
+import '../../data/storage/history_storage.dart';
 import '../../data/storage/last_device_storage.dart';
 import '../../domain/repositories/ble_repository.dart';
 
@@ -17,4 +18,8 @@ final bleRepositoryProvider = Provider<BleRepository>((ref) {
 
 final lastDeviceStorageProvider = Provider<LastDeviceStorage>((ref) {
   return LastDeviceStorage();
+});
+
+final historyStorageProvider = Provider<HistoryStorage>((ref) {
+  return HistoryStorage();
 });

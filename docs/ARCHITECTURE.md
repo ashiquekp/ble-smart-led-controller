@@ -154,6 +154,24 @@ step for long-unattended accuracy.
   reconnect), so the clock the scheduler uses is never more than one
   connection-session old.
 
+## Session history (Phase 6)
+
+Purely client-side — the firmware has no involvement (there's nothing
+for it to log; it doesn't persist anything across power cycles by
+design). `ConnectionController` already sees every connection state
+transition, so it's the natural place to bookend a session:
+
+- A session starts the first time status becomes `connected` after being
+  disconnected — importantly, a **reconnect that recovers mid-session
+  extends the existing session** rather than starting a new one (checked
+  via `_sessionStart ??= ...`, not an unconditional assignment).
+- A session ends on `disconnected` (intentional) or `error` (automatic
+  reconnection exhausted its attempts) — both go through the same
+  `_closeSessionIfOpen()` so there's one code path for "a session just
+  ended," not two.
+- `HistoryStorage` persists a capped rolling list (50 entries) via
+  SharedPreferences, newest first.
+
 ## Firmware modules
 
 - `ble_manager` — advertising, GATT setup, command parsing, notify dispatch
