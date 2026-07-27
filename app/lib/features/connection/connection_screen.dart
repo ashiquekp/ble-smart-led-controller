@@ -15,7 +15,7 @@ class ConnectionScreen extends ConsumerWidget {
     final device = ref.read(connectionControllerProvider.notifier).currentDevice;
 
     ref.listen<ConnectionStatus>(connectionControllerProvider, (previous, next) {
-      if (next == ConnectionStatus.disconnected && previous == ConnectionStatus.connected) {
+      if (next == ConnectionStatus.disconnected) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else if (next == ConnectionStatus.connected && previous != ConnectionStatus.connected) {
         Navigator.of(context).pushReplacement(
@@ -43,16 +43,36 @@ class ConnectionScreen extends ConsumerWidget {
               const SizedBox(height: 40),
               if (status == ConnectionStatus.error)
                 Text(
-                  'Something went wrong connecting to this device.',
+                  'Lost the connection and couldn\'t reconnect automatically.',
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  textAlign: TextAlign.center,
+                )
+              else if (status == ConnectionStatus.reconnecting)
+                const Text(
+                  'Connection dropped — trying to reconnect...',
+                  style: TextStyle(color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
               const SizedBox(height: 40),
-              OutlinedButton.icon(
-                onPressed: () =>
-                    ref.read(connectionControllerProvider.notifier).disconnect(),
-                icon: const Icon(Icons.bluetooth_disabled),
-                label: const Text('Disconnect'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (status == ConnectionStatus.error && device != null) ...[
+                    ElevatedButton.icon(
+                      onPressed: () =>
+                          ref.read(connectionControllerProvider.notifier).connect(device),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        ref.read(connectionControllerProvider.notifier).disconnect(),
+                    icon: const Icon(Icons.bluetooth_disabled),
+                    label: const Text('Disconnect'),
+                  ),
+                ],
               ),
             ],
           ),

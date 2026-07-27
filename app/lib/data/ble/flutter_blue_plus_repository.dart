@@ -13,6 +13,8 @@ import '../../domain/repositories/ble_repository.dart';
 /// directly. Everything else (providers, screens) talks to
 /// [BleRepository], so swapping BLE plugins later touches one file.
 class FlutterBluePlusRepository implements BleRepository {
+  static const int _maxReconnectAttempts = 3;
+
   BluetoothDevice? _device;
   StreamSubscription<BluetoothConnectionState>? _connectionSub;
   StreamSubscription<List<int>>? _statusSub;
@@ -25,6 +27,12 @@ class FlutterBluePlusRepository implements BleRepository {
   DeviceInfo? _currentDevice;
   BluetoothCharacteristic? _commandChar;
   BluetoothCharacteristic? _statusChar;
+
+  /// True only while a disconnect was explicitly requested via
+  /// [disconnect]. Distinguishes "user tapped disconnect" (no retry)
+  /// from "link dropped unexpectedly" (auto-reconnect).
+  bool _intentionalDisconnect = false;
+  int _reconnectAttempts = 0;
 
   @override
   DeviceInfo? get currentDevice => _currentDevice;
@@ -65,8 +73,7 @@ class FlutterBluePlusRepository implements BleRepository {
         .then((_) {
       resultsSub.cancel();
       controller.close();
-      if (_statusController.hasListener &&
-          _currentDevice == null) {
+      if (_statusController.hasListener && _currentDevice == null) {
         _statusController.add(ConnectionStatus.disconnected);
       }
     });
@@ -81,8 +88,17 @@ class FlutterBluePlusRepository implements BleRepository {
 
   @override
   Future<void> connect(DeviceInfo device) async {
-    _statusController.add(ConnectionStatus.connecting);
     _currentDevice = device;
+    _intentionalDisconnect = false;
+    _reconnectAttempts = 0;
+    await _performConnect(device);
+  }
+
+  /// The actual connect + service discovery flow, shared by [connect] and
+  /// the internal reconnection loop. Does NOT reset [_reconnectAttempts]
+  /// — callers decide when a fresh attempt counter is appropriate.
+  Future<void> _performConnect(DeviceInfo device) async {
+    _statusController.add(ConnectionStatus.connecting);
 
     try {
       final bluetoothDevice = BluetoothDevice.fromId(device.id);
@@ -96,7 +112,7 @@ class FlutterBluePlusRepository implements BleRepository {
       _connectionSub?.cancel();
       _connectionSub = bluetoothDevice.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
-          _statusController.add(ConnectionStatus.disconnected);
+          _handleUnderlyingDisconnect();
         }
       });
 
@@ -124,6 +140,7 @@ class FlutterBluePlusRepository implements BleRepository {
         _notifyController.add(value);
       });
 
+      _reconnectAttempts = 0; // link is healthy again
       _statusController.add(ConnectionStatus.connected);
     } catch (e) {
       _statusController.add(ConnectionStatus.error);
@@ -131,13 +148,66 @@ class FlutterBluePlusRepository implements BleRepository {
     }
   }
 
-  @override
-  Future<void> disconnect() async {
-    await _device?.disconnect();
+  /// Fired whenever the underlying BLE connection drops, whether the
+  /// user asked for it or not.
+  void _handleUnderlyingDisconnect() {
+    if (_intentionalDisconnect) {
+      _cleanupAfterDisconnect();
+      _statusController.add(ConnectionStatus.disconnected);
+      return;
+    }
+    _scheduleReconnect();
+  }
+
+  /// Retries the connection with exponential backoff (1s, 2s, 4s), up to
+  /// [_maxReconnectAttempts] times, before giving up and surfacing an
+  /// error. Runs entirely in the background — the UI just watches
+  /// [connectionStatus] transition through `reconnecting` and either
+  /// lands back on `connected` or ends at `error`.
+  Future<void> _scheduleReconnect() async {
+    final device = _currentDevice;
+    if (device == null) {
+      _statusController.add(ConnectionStatus.disconnected);
+      return;
+    }
+
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      _cleanupAfterDisconnect(keepCurrentDevice: true);
+      _statusController.add(ConnectionStatus.error);
+      return;
+    }
+
+    _reconnectAttempts++;
+    _statusController.add(ConnectionStatus.reconnecting);
+
+    final backoff = Duration(seconds: 1 << (_reconnectAttempts - 1)); // 1,2,4
+    await Future.delayed(backoff);
+
+    // Another disconnect/connect cycle may have superseded this attempt.
+    if (_currentDevice?.id != device.id) return;
+
+    try {
+      await _performConnect(device);
+    } catch (_) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _cleanupAfterDisconnect({bool keepCurrentDevice = false}) {
     _connectionSub?.cancel();
     _statusSub?.cancel();
     _commandChar = null;
     _statusChar = null;
+    if (!keepCurrentDevice) {
+      _currentDevice = null;
+    }
+  }
+
+  @override
+  Future<void> disconnect() async {
+    _intentionalDisconnect = true;
+    await _device?.disconnect();
+    _cleanupAfterDisconnect();
     _currentDevice = null;
     _statusController.add(ConnectionStatus.disconnected);
   }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/ble/flutter_blue_plus_repository.dart';
+import '../../data/storage/last_device_storage.dart';
 import '../../domain/repositories/ble_repository.dart';
 
 /// The single [BleRepository] instance for the app's lifetime.
@@ -12,4 +13,8 @@ final bleRepositoryProvider = Provider<BleRepository>((ref) {
   final repo = FlutterBluePlusRepository();
   ref.onDispose(repo.dispose);
   return repo;
+});
+
+final lastDeviceStorageProvider = Provider<LastDeviceStorage>((ref) {
+  return LastDeviceStorage();
 });

@@ -12,3 +12,11 @@ final scanResultsProvider =
   final repo = ref.watch(bleRepositoryProvider);
   return repo.scanForDevices();
 });
+
+/// The last device the app successfully connected to, if any — lets the
+/// scan screen offer a one-tap "reconnect" shortcut instead of making
+/// the user find it in the scan list again.
+final lastDeviceProvider = FutureProvider.autoDispose<DeviceInfo?>((ref) {
+  final storage = ref.watch(lastDeviceStorageProvider);
+  return storage.load();
+});

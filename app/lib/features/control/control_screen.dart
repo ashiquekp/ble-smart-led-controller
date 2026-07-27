@@ -4,6 +4,7 @@ import 'dart:ui' show Color;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../connection/connection_screen.dart';
 import '../connection/providers/connection_provider.dart';
 import '../../domain/models/connection_status.dart';
 import 'providers/led_control_provider.dart';
@@ -54,6 +55,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     ref.listen<ConnectionStatus>(connectionControllerProvider, (previous, next) {
       if (next == ConnectionStatus.disconnected) {
         Navigator.of(context).popUntil((route) => route.isFirst);
+      } else if (next == ConnectionStatus.reconnecting || next == ConnectionStatus.error) {
+        // Drop back to the connection screen so the user can see
+        // reconnection progress (or the retry/disconnect options if it
+        // ultimately fails) rather than sitting on now-stale controls.
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const ConnectionScreen()),
+        );
       }
     });
 

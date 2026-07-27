@@ -6,6 +6,7 @@ import '../../connection/connection_screen.dart';
 import '../../connection/providers/connection_provider.dart';
 import '../providers/scan_providers.dart';
 import 'widgets/device_tile.dart';
+import 'widgets/last_device_banner.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
@@ -38,31 +39,49 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     final scanResults = ref.watch(scanResultsProvider);
+    final lastDevice = ref.watch(lastDeviceProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Find your LED strip')),
-      body: scanResults.when(
-        data: (devices) {
-          if (devices.isEmpty) {
-            return const _ScanEmptyState();
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: devices.length,
-            itemBuilder: (context, index) {
-              final device = devices[index];
-              return DeviceTile(
-                device: device,
-                isConnecting: _connectingDeviceId == device.id,
-                onTap: () => _connect(device),
-              );
-            },
-          );
-        },
-        loading: () => const _ScanEmptyState(scanning: true),
-        error: (error, _) => Center(
-          child: Text('Scan failed: $error'),
-        ),
+      body: Column(
+        children: [
+          lastDevice.when(
+            data: (device) => device == null
+                ? const SizedBox.shrink()
+                : LastDeviceBanner(
+                    device: device,
+                    isConnecting: _connectingDeviceId == device.id,
+                    onReconnect: () => _connect(device),
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+          Expanded(
+            child: scanResults.when(
+              data: (devices) {
+                if (devices.isEmpty) {
+                  return const _ScanEmptyState();
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: devices.length,
+                  itemBuilder: (context, index) {
+                    final device = devices[index];
+                    return DeviceTile(
+                      device: device,
+                      isConnecting: _connectingDeviceId == device.id,
+                      onTap: () => _connect(device),
+                    );
+                  },
+                );
+              },
+              loading: () => const _ScanEmptyState(scanning: true),
+              error: (error, _) => Center(
+                child: Text('Scan failed: $error'),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => ref.refresh(scanResultsProvider),
