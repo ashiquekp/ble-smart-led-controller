@@ -9,7 +9,9 @@ import '../../domain/models/connection_status.dart';
 import 'providers/led_control_provider.dart';
 import 'widgets/brightness_slider.dart';
 import 'widgets/color_wheel_section.dart';
+import 'widgets/effect_picker.dart';
 import 'widgets/power_toggle.dart';
+import 'widgets/speed_slider.dart';
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -75,9 +77,20 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
             onChanged: controller.setPower,
           ),
           const SizedBox(height: 12),
+          EffectPicker(
+            selectedEffectId: ledState.effectId,
+            onSelected: controller.setEffect,
+          ),
+          const SizedBox(height: 12),
           ColorWheelSection(
             color: Color.fromARGB(255, ledState.r, ledState.g, ledState.b),
             onColorChanged: _onColorChanged,
+          ),
+          const SizedBox(height: 12),
+          SpeedSlider(
+            speed: ledState.speed,
+            enabled: ledState.effectId != 0,
+            onChanged: controller.setSpeed,
           ),
           const SizedBox(height: 12),
           BrightnessSlider(

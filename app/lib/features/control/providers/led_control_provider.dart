@@ -58,6 +58,16 @@ class LedControlController extends StateNotifier<LedControlState> {
     await _repo.sendCommand(BleCommandCodec.setPower(on));
   }
 
+  Future<void> setEffect(int effectId) async {
+    state = state.copyWith(effectId: effectId);
+    await _repo.sendCommand(BleCommandCodec.setEffect(effectId));
+  }
+
+  Future<void> setSpeed(int speed) async {
+    state = state.copyWith(speed: speed);
+    await _repo.sendCommand(BleCommandCodec.setSpeed(speed));
+  }
+
   Future<void> requestStatus() async {
     await _repo.sendCommand(BleCommandCodec.requestStatus());
   }
