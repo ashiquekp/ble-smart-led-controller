@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "ble_manager.h"
+#include "led_manager.h"
 
 // Single source of truth for device state. LED manager, effects engine,
 // and scheduler (added in later phases) will all read/write this struct
@@ -8,13 +9,15 @@
 static DeviceState state;
 
 // Handles parsed, checksum-valid commands from the app.
-// Phase 1: just updates state and logs to Serial so we can verify the
-// BLE link end-to-end before any LED hardware logic exists.
+// Updates shared state, drives the LED strip through LedManager, and
+// logs to Serial for debugging. Effects (Phase 3) and scheduling
+// (Phase 5) hook into this same dispatch.
 static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len) {
     switch (opcode) {
         case OP_SET_POWER:
             if (len >= 1) {
                 state.power = payload[0] != 0;
+                ledManager.setPower(state.power);
                 Serial.printf("[CMD] SET_POWER -> %d\n", state.power);
             }
             break;
@@ -24,6 +27,7 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
                 state.r = payload[0];
                 state.g = payload[1];
                 state.b = payload[2];
+                ledManager.setSolidColor(state.r, state.g, state.b);
                 Serial.printf("[CMD] SET_COLOR -> R:%d G:%d B:%d\n", state.r, state.g, state.b);
             }
             break;
@@ -31,6 +35,7 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
         case OP_SET_BRIGHTNESS:
             if (len >= 1) {
                 state.brightness = payload[0];
+                ledManager.setBrightness(state.brightness);
                 Serial.printf("[CMD] SET_BRIGHTNESS -> %d\n", state.brightness);
             }
             break;
@@ -70,6 +75,8 @@ void setup() {
     Serial.begin(115200);
     delay(500); // let USB serial settle on the C3
     Serial.println("\n[BOOT] BLE Smart LED Controller — firmware starting");
+
+    ledManager.begin();
 
     bleManager.setCommandHandler(onCommand);
     bleManager.begin(&state);
