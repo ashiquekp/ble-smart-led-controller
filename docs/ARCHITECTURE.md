@@ -95,6 +95,31 @@ also stall other future firmware work sharing the main task.
   a sine pulse (`beatsin8`) while active; switching back to `SOLID`
   restores the user's actual brightness setting.
 
+## Status indicators + reconnection (Phase 4)
+
+**Firmware — `StatusIndicator`**: drives the three status LEDs from BLE
+connection/error events, decoupled from `BleManager` via two callback
+types (`ConnectionEventHandler`, `ErrorHandler`) so `BleManager` doesn't
+need to know LEDs exist. Same non-blocking `tick()` pattern as the
+effects engine — advertising blinks slowly, error blinks fast, connected
+is solid.
+
+**App — automatic reconnection**: `FlutterBluePlusRepository` tracks
+whether a disconnect was user-initiated (via `disconnect()`) or not. An
+unexpected drop triggers `_scheduleReconnect()`: up to 3 attempts with
+exponential backoff (1s, 2s, 4s), surfacing `ConnectionStatus.reconnecting`
+throughout. If all attempts fail, it lands on `ConnectionStatus.error`
+(rather than silently giving up), and the Connection screen offers a
+manual "Retry" button. A short interview-worthy point: the backoff and
+retry-count live entirely in the repository, not the UI — the UI just
+reacts to a status stream, so the retry policy could change without
+touching any widget.
+
+**App — last-device persistence**: on every successful connect, the
+device id/name is saved via `LastDeviceStorage` (SharedPreferences). The
+scan screen shows a "Last used" banner for one-tap reconnect, without
+requiring a fresh scan to find the same device again.
+
 ## Firmware modules
 
 - `ble_manager` — advertising, GATT setup, command parsing, notify dispatch

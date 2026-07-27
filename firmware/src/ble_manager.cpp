@@ -25,11 +25,17 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     void onConnect(NimBLEServer* server, NimBLEConnInfo& connInfo) override {
         bleManager._connected = true;
         Serial.println("[BLE] Client connected");
+        if (bleManager._onConnectionEvent) {
+            bleManager._onConnectionEvent(true);
+        }
     }
 
     void onDisconnect(NimBLEServer* server, NimBLEConnInfo& connInfo, int reason) override {
         bleManager._connected = false;
         Serial.println("[BLE] Client disconnected, resuming advertising");
+        if (bleManager._onConnectionEvent) {
+            bleManager._onConnectionEvent(false);
+        }
         NimBLEDevice::startAdvertising();
     }
 };
@@ -49,6 +55,7 @@ class CommandCharacteristicCallbacks : public NimBLECharacteristicCallbacks {
                 bleManager._state->errorCode = 1; // 1 = bad checksum
                 bleManager.notifyStatus();
             }
+            if (bleManager._onError) bleManager._onError(1);
             return;
         }
 
@@ -61,6 +68,7 @@ class CommandCharacteristicCallbacks : public NimBLECharacteristicCallbacks {
                 bleManager._state->errorCode = 2; // 2 = bad length
                 bleManager.notifyStatus();
             }
+            if (bleManager._onError) bleManager._onError(2);
             return;
         }
 
@@ -107,6 +115,14 @@ void BleManager::begin(DeviceState* state) {
 
 void BleManager::setCommandHandler(CommandHandler handler) {
     _onCommand = handler;
+}
+
+void BleManager::setConnectionEventHandler(ConnectionEventHandler handler) {
+    _onConnectionEvent = handler;
+}
+
+void BleManager::setErrorHandler(ErrorHandler handler) {
+    _onError = handler;
 }
 
 void BleManager::notifyStatus() {

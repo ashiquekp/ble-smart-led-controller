@@ -3,6 +3,7 @@
 #include "ble_manager.h"
 #include "led_manager.h"
 #include "effects_engine.h"
+#include "status_indicator.h"
 
 // Single source of truth for device state. LED manager, effects engine,
 // and scheduler (added in later phases) will all read/write this struct
@@ -86,6 +87,9 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
 
     state.errorCode = 0;
     bleManager.notifyStatus();
+    if (bleManager.isConnected()) {
+        statusIndicator.setState(BleState::Connected);
+    }
 }
 
 void setup() {
@@ -95,19 +99,29 @@ void setup() {
 
     ledManager.begin();
     effectsEngine.begin(ledManager.rawLeds(), ledManager.ledCount());
+    statusIndicator.begin();
 
     bleManager.setCommandHandler(onCommand);
+    bleManager.setConnectionEventHandler([](bool connected) {
+        statusIndicator.setState(connected ? BleState::Connected : BleState::Advertising);
+    });
+    bleManager.setErrorHandler([](uint8_t errorCode) {
+        statusIndicator.setState(BleState::Error);
+    });
     bleManager.begin(&state);
 
     Serial.println("[BOOT] Ready and advertising. Waiting for connections...");
 }
 
 void loop() {
-    // Non-blocking by design: effectsEngine.tick() rate-limits itself
-    // internally and returns immediately when idle, so this never stalls
-    // BLE command processing (NimBLE runs on its own task, but keeping
-    // loop() fast is still good practice for future additions here).
+    // Non-blocking by design: effectsEngine.tick() and statusIndicator.tick()
+    // both rate-limit themselves internally and return immediately when
+    // idle, so this never stalls BLE command processing.
+    uint32_t now = millis();
+
     if (state.power && state.effectId != EFFECT_SOLID) {
-        effectsEngine.tick(millis());
+        effectsEngine.tick(now);
     }
+
+    statusIndicator.tick(now);
 }
