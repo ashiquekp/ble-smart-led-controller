@@ -59,10 +59,11 @@ Byte n+1: checksum      (1 byte, XOR of all preceding bytes)
 | 0x03 | SET_BRIGHTNESS | 1 byte: 0–255 |
 | 0x04 | SET_EFFECT | 1 byte: effect ID |
 | 0x05 | SET_SPEED | 1 byte: 0–255 |
-| 0x06 | SET_SCHEDULE | 4 bytes: action, hour, minute, repeat-mask |
+| 0x06 | SET_SCHEDULE | 4 bytes: action (0=off,1=on,2=clear), hour, minute, repeatMask |
 | 0x07 | REQUEST_STATUS | 0 bytes |
+| 0x08 | SYNC_TIME | 4 bytes: hour, minute, second, weekday (0=Sunday) |
 
-Opcodes 0x08–0x1F are reserved for future features (multi-zone, custom
+Opcodes 0x09–0x1F are reserved for future features (multi-zone, custom
 effect params) without breaking the wire format.
 
 ### Status packet format (notify)
@@ -119,6 +120,39 @@ touching any widget.
 device id/name is saved via `LastDeviceStorage` (SharedPreferences). The
 scan screen shows a "Last used" banner for one-tap reconnect, without
 requiring a fresh scan to find the same device again.
+
+## Scheduling (Phase 5)
+
+**The core design problem**: the XIAO ESP32-C3 has no battery-backed RTC,
+and this project has no WiFi/NTP in scope — so the firmware has no way
+to know "real" time on its own.
+
+**The chosen solution**: rather than epoch timestamps + timezone
+handling (which would add real complexity for a single on/off timer),
+the app sends the phone's current **local** time once per connection
+(`SYNC_TIME`: hour/minute/second/weekday), and `Scheduler` advances that
+clock using `millis()` elapsed since the sync. This drifts slowly (no
+crystal-accurate reference) but is entirely acceptable for a lighting
+schedule, and sidesteps an entire class of timezone/epoch bugs. Worth
+stating plainly in an interview: this was a deliberate scope trade-off,
+not an oversight — a DS3231-style RTC module would be the natural next
+step for long-unattended accuracy.
+
+- **Single schedule slot** in v1 — `SET_SCHEDULE` always targets slot 0.
+  The wire format (opcode + length-prefixed payload) already supports
+  adding a slot-index byte later without breaking existing clients.
+- **One-shot vs repeating**: `repeatMask == 0` means "fire once, then
+  disable"; a non-zero bitmask (bit0=Sunday..bit6=Saturday) repeats
+  weekly on the matching days.
+- **Fire guard**: `Scheduler` tracks a monotonic "minutes since sync"
+  counter for the last fire, not a minute-of-day value — so a daily
+  repeat correctly fires again the next day without extra day-rollover
+  bookkeeping, and a schedule can never double-fire within one matching
+  minute.
+- **App side**: `ConnectionController` sends `SYNC_TIME` automatically
+  right after every successful connect (including after an automatic
+  reconnect), so the clock the scheduler uses is never more than one
+  connection-session old.
 
 ## Firmware modules
 

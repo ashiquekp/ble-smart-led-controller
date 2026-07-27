@@ -4,6 +4,7 @@
 #include "led_manager.h"
 #include "effects_engine.h"
 #include "status_indicator.h"
+#include "scheduler.h"
 
 // Single source of truth for device state. LED manager, effects engine,
 // and scheduler (added in later phases) will all read/write this struct
@@ -73,7 +74,15 @@ static void onCommand(CommandOpcode opcode, const uint8_t* payload, uint8_t len)
             break;
 
         case OP_SET_SCHEDULE:
-            Serial.println("[CMD] SET_SCHEDULE received (scheduler lands in Phase 5)");
+            if (len >= 4) {
+                scheduler.setSchedule(payload[0], payload[1], payload[2], payload[3]);
+            }
+            break;
+
+        case OP_SYNC_TIME:
+            if (len >= 4) {
+                scheduler.syncTime(payload[0], payload[1], payload[2], payload[3]);
+            }
             break;
 
         case OP_REQUEST_STATUS:
@@ -100,6 +109,7 @@ void setup() {
     ledManager.begin();
     effectsEngine.begin(ledManager.rawLeds(), ledManager.ledCount());
     statusIndicator.begin();
+    scheduler.begin();
 
     bleManager.setCommandHandler(onCommand);
     bleManager.setConnectionEventHandler([](bool connected) {
@@ -114,9 +124,10 @@ void setup() {
 }
 
 void loop() {
-    // Non-blocking by design: effectsEngine.tick() and statusIndicator.tick()
-    // both rate-limit themselves internally and return immediately when
-    // idle, so this never stalls BLE command processing.
+    // Non-blocking by design: effectsEngine.tick(), statusIndicator.tick(),
+    // and scheduler.tick() all rate-limit themselves internally and
+    // return immediately when idle, so this never stalls BLE command
+    // processing.
     uint32_t now = millis();
 
     if (state.power && state.effectId != EFFECT_SOLID) {
@@ -124,4 +135,15 @@ void loop() {
     }
 
     statusIndicator.tick(now);
+
+    if (scheduler.tick(now)) {
+        // tick() only clears `enabled` for one-shot schedules — the
+        // `action` field itself isn't touched, so this reference still
+        // reflects the schedule that just fired.
+        const ScheduleEntry& firedSchedule = scheduler.schedule();
+        state.power = (firedSchedule.action == SCHEDULE_ACTION_ON);
+        ledManager.setPower(state.power);
+        bleManager.notifyStatus();
+        Serial.printf("[SCHEDULER] Applied scheduled power: %d\n", state.power);
+    }
 }

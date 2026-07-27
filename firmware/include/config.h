@@ -45,4 +45,5 @@ enum CommandOpcode : uint8_t {
     OP_SET_SPEED       = 0x05,
     OP_SET_SCHEDULE    = 0x06,
     OP_REQUEST_STATUS  = 0x07,
+    OP_SYNC_TIME       = 0x08,
 };
