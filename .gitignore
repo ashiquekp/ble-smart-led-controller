@@ -1,0 +1,20 @@
+# Flutter / Dart
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/android/.gradle/
+app/android/app/build/
+app/ios/Pods/
+app/ios/.symlinks/
+app/**/generated_plugin_registrant.dart
+*.iml
+.idea/
+
+# PlatformIO
+firmware/.pio/
+firmware/.vscode/
+
+# OS
+.DS_Store

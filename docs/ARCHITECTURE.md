@@ -1,0 +1,99 @@
+# Architecture
+
+## Overview
+
+```
+Flutter App                         ESP32-C3 Firmware
+------------                        ------------------
+UI screens (dashboard, control)     BLE manager (advertising, GATT)
+Riverpod state                      LED manager (FastLED wrapper)
+BLE service layer (encode/decode)   Effects engine (non-blocking)
+                                     Scheduler (timers)
+                                     Status LED indicators
+        \___________ custom binary BLE protocol ___________/
+```
+
+The app never talks "colors" or "effects" directly to the BLE plugin — it
+goes through a single `BleCommandCodec` that turns domain models into binary
+packets, and a single `BleConnectionRepository` that owns the actual
+connection. This keeps the BLE plugin swappable and the domain layer 100%
+testable without hardware.
+
+## Why one command characteristic instead of one-per-feature
+
+A characteristic-per-feature (one for color, one for brightness, one for
+effect...) is the "tutorial" approach. Real products (WLED, Govee, Tuya)
+use a small number of characteristics with structured binary payloads,
+because:
+
+- Multi-field updates (e.g. "set color AND brightness") should be atomic —
+  one write, one state transition on the device.
+- Fewer BLE round-trips = lower latency, less connection interval overhead.
+- It's versionable: add new opcodes without changing the GATT table, so
+  firmware and app can evolve independently.
+
+## GATT design
+
+**Service:** BLE Smart LED Service (custom 128-bit UUID)
+
+| Characteristic | Properties | Direction | Purpose |
+|---|---|---|---|
+| Command | Write, Write-without-response | App → Device | All control commands |
+| Status | Read, Notify | Device → App | State, connection health, sensor/status data |
+
+### Command packet format
+
+```
+Byte 0:   opcode        (1 byte)
+Byte 1:   payload_len   (1 byte)
+Byte 2..n: payload      (opcode-specific)
+Byte n+1: checksum      (1 byte, XOR of all preceding bytes)
+```
+
+### Opcode table (v1)
+
+| Opcode | Name | Payload |
+|---|---|---|
+| 0x01 | SET_POWER | 1 byte: 0 = off, 1 = on |
+| 0x02 | SET_COLOR | 3 bytes: R, G, B |
+| 0x03 | SET_BRIGHTNESS | 1 byte: 0–255 |
+| 0x04 | SET_EFFECT | 1 byte: effect ID |
+| 0x05 | SET_SPEED | 1 byte: 0–255 |
+| 0x06 | SET_SCHEDULE | 4 bytes: action, hour, minute, repeat-mask |
+| 0x07 | REQUEST_STATUS | 0 bytes |
+
+Opcodes 0x08–0x1F are reserved for future features (multi-zone, custom
+effect params) without breaking the wire format.
+
+### Status packet format (notify)
+
+```
+Byte 0:   power        (0/1)
+Byte 1-3: current RGB
+Byte 4:   brightness
+Byte 5:   effect ID
+Byte 6:   speed
+Byte 7:   error_code   (0 = ok)
+```
+
+## Firmware modules
+
+- `ble_manager` — advertising, GATT setup, command parsing, notify dispatch
+- `led_manager` — safe wrapper around the LED driver (color/brightness/power)
+- `effects_engine` — registry of non-blocking effects (millis()-based)
+- `scheduler` — timer-based delayed/repeated actions
+- `status_indicator` — extra LEDs reflect BLE connection state
+- `config.h` — pins, device name, LED count, defaults
+
+## Flutter modules
+
+- `core/` — theming, constants, error types
+- `data/ble/` — BLE plugin wrapper, packet encode/decode (`BleCommandCodec`)
+- `domain/models/` — `LedColor`, `EffectPreset`, `Schedule`, `DeviceInfo`
+- `domain/repositories/` — abstract contracts (mockable for tests)
+- `features/scanning/` — discover + saved device list
+- `features/connection/` — connect screen, connection state UI
+- `features/control/` — dashboard: color, brightness, effects, speed
+- `features/scheduling/` — timer UI
+- `features/history/` — session/usage log screen
+- `features/settings/`
