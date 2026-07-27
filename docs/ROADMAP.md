@@ -1,7 +1,7 @@
 # Roadmap
 
 - [x] **Phase 0** — Repo scaffolding, README, architecture docs
-- [ ] **Phase 1** — BLE foundation: firmware advertising + GATT service,
+- [x] **Phase 1** — BLE foundation: firmware advertising + GATT service,
       app scanning + connect/disconnect screen
 - [ ] **Phase 2** — Basic LED control: color, brightness, power
 - [ ] **Phase 3** — Effects engine: rainbow, breathing, chase, fire + speed
