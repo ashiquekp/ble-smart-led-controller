@@ -4,6 +4,20 @@ Talking points and likely questions this project equips you to answer
 well, organized by theme. Each answer references the actual design
 decision in the code, not a generic textbook answer.
 
+**Q: What's a real bug you hit, not a hypothetical one?**
+A: During hardware bring-up, the app couldn't find the device at all.
+Diagnosed with a generic BLE scanner (nRF Connect) rather than guessing
+from the app side — it showed the device advertising with only Flags,
+no name, no service UUID. Root cause: a legacy BLE advertising packet is
+capped at 31 bytes, and Flags + a 128-bit service UUID + the device name
+didn't all fit in one packet — NimBLE silently dropped the overflow
+instead of erroring. Fix: explicitly split advertising data (flags +
+service UUID) from scan response data (device name), each with its own
+31-byte budget. The debugging approach mattered as much as the fix:
+isolating firmware-vs-app by testing with a tool that has no dependency
+on either codebase turned an ambiguous "nothing shows up" into a
+one-line root cause.
+
 ## BLE / protocol design
 
 **Q: Why one command characteristic instead of one per feature (color,

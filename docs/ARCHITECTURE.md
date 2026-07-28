@@ -50,6 +50,20 @@ Byte 2..n: payload      (opcode-specific)
 Byte n+1: checksum      (1 byte, XOR of all preceding bytes)
 ```
 
+### Advertising packet layout
+
+A legacy BLE advertising PDU is capped at 31 bytes, which isn't enough
+for flags + a 128-bit service UUID + a device name in one packet. The
+firmware splits them across the two independent 31-byte budgets legacy
+advertising provides:
+
+- **Advertising data**: flags + the service UUID (so scanners can
+  filter by service without connecting)
+- **Scan response data**: the device name
+
+(This was found the hard way during Phase 1 hardware bring-up — see
+`docs/TROUBLESHOOTING.md`.)
+
 ### Opcode table (v1)
 
 | Opcode | Name | Payload |

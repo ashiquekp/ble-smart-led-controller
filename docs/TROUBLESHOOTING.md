@@ -41,13 +41,27 @@ Work through these roughly in order of likelihood:
    issue above first; you need to see
    `[BOOT] Ready and advertising. Waiting for connections...` in the
    monitor before the app has any chance of finding the device.
-3. **Permissions**: on the real device, confirm the app was granted
+3. **Device name missing from the advertising packet.** This one is
+   subtle and worth understanding: a legacy BLE advertising packet is
+   capped at 31 bytes. Flags (~3 bytes) + a 128-bit service UUID
+   (~18 bytes) leave too little room for a device name like
+   `SmartLED-C3` in the *same* packet — NimBLE silently drops whatever
+   doesn't fit rather than raising an error. Diagnosed by scanning with
+   a generic tool like **nRF Connect for Mobile**: if the device shows
+   up as "UNKNOWN" with only Flags visible (no name, no service UUID),
+   this is the cause. Fixed by explicitly splitting advertising data
+   (flags + service UUID) from scan response data (device name) in
+   `BleManager::begin()` — each gets its own independent 31-byte budget.
+   Since our Flutter scan filters by device name, a dropped name means
+   the app structurally could never have found the device, regardless
+   of permissions or scan code.
+4. **Permissions**: on the real device, confirm the app was granted
    Bluetooth/Nearby devices permission (Android settings → Apps → \[app
    name\] → Permissions), not just that a dialog appeared once.
-4. **Bluetooth + Location toggled on** on the phone itself (some Android
+5. **Bluetooth + Location toggled on** on the phone itself (some Android
    versions still gate BLE scan results behind Location being on, even
    with runtime permission granted).
-5. **Name filter mismatch**: the app only shows devices whose advertised
+6. **Name filter mismatch**: the app only shows devices whose advertised
    name contains `SmartLED` (see `BleConstants.deviceNamePrefix`), which
    should match firmware's `DEVICE_NAME "SmartLED-C3"`. If you changed
    one without the other, they'll silently stop matching.

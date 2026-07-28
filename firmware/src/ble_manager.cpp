@@ -105,9 +105,25 @@ void BleManager::begin(DeviceState* state) {
 
     pService->start();
 
+    // IMPORTANT: a legacy BLE advertising packet is capped at 31 bytes.
+    // Flags (~3 bytes) + a 128-bit service UUID (~18 bytes) already use
+    // most of that budget, leaving too little room for the device name
+    // ("SmartLED-C3" needs ~13 bytes) in the SAME packet — NimBLE will
+    // silently drop whatever doesn't fit rather than erroring. The fix
+    // is to put the name in the separate scan response packet instead,
+    // which has its own independent 31-byte budget.
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(SERVICE_UUID);
-    pAdvertising->setName(DEVICE_NAME);
+
+    NimBLEAdvertisementData advData;
+    advData.setFlags(0x06); // LE General Discoverable Mode | BR/EDR Not Supported
+    advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
+    pAdvertising->setAdvertisementData(advData);
+
+    NimBLEAdvertisementData scanResponseData;
+    scanResponseData.setName(DEVICE_NAME);
+    pAdvertising->setScanResponseData(scanResponseData);
+    pAdvertising->setScanResponse(true);
+
     pAdvertising->start();
 
     Serial.println("[BLE] Advertising started as " DEVICE_NAME);
