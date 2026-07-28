@@ -1,0 +1,72 @@
+<svg width="820" height="420" viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <rect width="820" height="420" fill="#0F1115"/>
+
+  <!-- XIAO ESP32-C3 board -->
+  <rect x="60" y="140" width="150" height="140" rx="10" fill="#1A1D23" stroke="#7C5CFF" stroke-width="2"/>
+  <text x="135" y="125" fill="#FFFFFF" font-size="16" font-weight="600" text-anchor="middle">XIAO ESP32-C3</text>
+
+  <circle cx="90" cy="170" r="4" fill="#3DDC84"/>
+  <text x="102" y="175" fill="#3DDC84" font-size="13">D0 (GPIO2) — Data</text>
+
+  <circle cx="90" cy="205" r="4" fill="#FF5B5B"/>
+  <text x="102" y="210" fill="#FF5B5B" font-size="13">5V</text>
+
+  <circle cx="90" cy="240" r="4" fill="#C9CDD3"/>
+  <text x="102" y="245" fill="#C9CDD3" font-size="13">GND</text>
+
+  <circle cx="90" cy="275" r="4" fill="#F2C94C"/>
+  <text x="102" y="280" fill="#F2C94C" font-size="13">USB (5V, low-power test)</text>
+
+  <!-- 220 ohm resistor symbol on data line -->
+  <g transform="translate(230,170)">
+    <line x1="0" y1="0" x2="16" y2="0" stroke="#C9CDD3" stroke-width="2"/>
+    <path d="M16,0 L22,-8 L30,8 L38,-8 L46,8 L54,-8 L60,0" fill="none" stroke="#C9CDD3" stroke-width="2"/>
+    <line x1="60" y1="0" x2="76" y2="0" stroke="#C9CDD3" stroke-width="2"/>
+    <text x="18" y="-16" fill="#C9CDD3" font-size="12">220Ω</text>
+  </g>
+
+  <!-- Wires from XIAO to strip -->
+  <line x1="210" y1="170" x2="230" y2="170" stroke="#3DDC84" stroke-width="2"/>
+  <line x1="306" y1="170" x2="430" y2="170" stroke="#3DDC84" stroke-width="2"/>
+  <line x1="210" y1="205" x2="430" y2="205" stroke="#FF5B5B" stroke-width="2"/>
+  <line x1="210" y1="240" x2="430" y2="240" stroke="#C9CDD3" stroke-width="2"/>
+
+  <!-- WS2812B strip -->
+  <rect x="430" y="150" width="330" height="110" rx="8" fill="#1A1D23" stroke="#F2C94C" stroke-width="2"/>
+  <text x="595" y="135" fill="#FFFFFF" font-size="16" font-weight="600" text-anchor="middle">WS2812B-60L-IP20-B (60 LEDs)</text>
+
+  <g>
+    <circle cx="450" cy="170" r="4" fill="#3DDC84"/>
+    <text x="462" y="175" fill="#3DDC84" font-size="13">DI (Data In)</text>
+    <circle cx="450" cy="205" r="4" fill="#FF5B5B"/>
+    <text x="462" y="210" fill="#FF5B5B" font-size="13">5V</text>
+    <circle cx="450" cy="240" r="4" fill="#C9CDD3"/>
+    <text x="462" y="245" fill="#C9CDD3" font-size="13">GND</text>
+  </g>
+
+  <!-- LED pixels -->
+  <g>
+    <circle cx="620" cy="190" r="6" fill="#FF5B5B"/>
+    <circle cx="650" cy="190" r="6" fill="#F2C94C"/>
+    <circle cx="680" cy="190" r="6" fill="#3DDC84"/>
+    <circle cx="710" cy="190" r="6" fill="#7C5CFF"/>
+    <circle cx="740" cy="190" r="6" fill="#FFFFFF"/>
+    <text x="680" y="220" fill="#C9CDD3" font-size="11" text-anchor="middle">...to 60 LEDs</text>
+  </g>
+
+  <!-- External 5V supply -->
+  <rect x="500" y="300" width="180" height="70" rx="8" fill="#1A1D23" stroke="#FF5B5B" stroke-width="2"/>
+  <text x="590" y="325" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="middle">External 5V Supply</text>
+  <text x="590" y="345" fill="#C9CDD3" font-size="11" text-anchor="middle">(sized for LED count)</text>
+  <text x="590" y="360" fill="#C9CDD3" font-size="11" text-anchor="middle">shares GND with XIAO</text>
+
+  <line x1="560" y1="260" x2="560" y2="300" stroke="#FF5B5B" stroke-width="2"/>
+  <line x1="620" y1="260" x2="620" y2="300" stroke="#C9CDD3" stroke-width="2"/>
+  <line x1="90" y1="280" x2="90" y2="400" stroke="#C9CDD3" stroke-width="2" stroke-dasharray="4,3"/>
+  <line x1="90" y1="400" x2="620" y2="400" stroke="#C9CDD3" stroke-width="2" stroke-dasharray="4,3"/>
+  <line x1="620" y1="400" x2="620" y2="370" stroke="#C9CDD3" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="355" y="415" fill="#C9CDD3" font-size="11" text-anchor="middle">common ground — critical for reliable data signalling</text>
+
+  <text x="410" y="40" fill="#FFFFFF" font-size="18" font-weight="700" text-anchor="middle">BLE Smart LED Controller — Wiring</text>
+  <text x="410" y="62" fill="#8A8F98" font-size="12" text-anchor="middle">See docs/WIRING.md for status LED pins and power budget notes</text>
+</svg>

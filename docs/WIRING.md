@@ -1,5 +1,7 @@
 # Wiring
 
+![Wiring diagram](assets/wiring-diagram.svg)
+
 ## Seeed Studio XIAO ESP32-C3 ↔ WS2812B-60L-IP20-B
 
 | Strip wire | Connects to | Notes |
