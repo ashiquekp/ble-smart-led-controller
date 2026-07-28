@@ -130,6 +130,17 @@ void loop() {
     // processing.
     uint32_t now = millis();
 
+    // Temporary diagnostic heartbeat (Phase 1/2 bring-up only — safe to
+    // remove once BLE connectivity is confirmed working). Prints every
+    // 2s regardless of when the monitor attaches, so you don't have to
+    // catch the exact reset moment to know the board is alive.
+    static uint32_t lastHeartbeat = 0;
+    if (now - lastHeartbeat >= 2000) {
+        lastHeartbeat = now;
+        Serial.printf("[HEARTBEAT] uptime=%lus bleConnected=%d power=%d effect=%d\n",
+                      now / 1000, bleManager.isConnected(), state.power, state.effectId);
+    }
+
     if (state.power && state.effectId != EFFECT_SOLID) {
         effectsEngine.tick(now);
     }
