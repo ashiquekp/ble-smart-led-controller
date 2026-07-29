@@ -103,7 +103,9 @@ void BleManager::begin(DeviceState* state) {
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
     );
 
-    pService->start();
+    // Note: NimBLEService::start() is deprecated in NimBLE-Arduino 2.x —
+    // services now start automatically when the server starts, which
+    // happens implicitly via advertising below.
 
     // IMPORTANT: a legacy BLE advertising packet is capped at 31 bytes.
     // Flags (~3 bytes) + a 128-bit service UUID (~18 bytes) already use
@@ -122,7 +124,6 @@ void BleManager::begin(DeviceState* state) {
     NimBLEAdvertisementData scanResponseData;
     scanResponseData.setName(DEVICE_NAME);
     pAdvertising->setScanResponseData(scanResponseData);
-    pAdvertising->setScanResponse(true);
 
     pAdvertising->start();
 
