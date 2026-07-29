@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/device_info.dart';
-import '../../connection/connection_screen.dart';
-import '../../connection/providers/connection_provider.dart';
-import '../providers/scan_providers.dart';
+import '../connection/connection_screen.dart';
+import '../connection/providers/connection_provider.dart';
+import 'providers/scan_providers.dart';
 import 'widgets/device_tile.dart';
 import 'widgets/last_device_banner.dart';
 

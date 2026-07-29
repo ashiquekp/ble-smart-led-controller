@@ -3,7 +3,7 @@
 ## Short project description (for a resume "Projects" section)
 
 **BLE Smart RGB LED Strip Controller** — Flutter + ESP32-C3
-*Personal project | [GitHub link]*
+*Personal project | https://github.com/ashiquekp/ble-smart-led-controller*
 
 Designed and built a full-stack IoT lighting controller: a Flutter
 mobile app communicating with custom ESP32-C3 firmware over a
