@@ -45,7 +45,7 @@ Work through these roughly in order of likelihood:
    subtle and worth understanding: a legacy BLE advertising packet is
    capped at 31 bytes. Flags (~3 bytes) + a 128-bit service UUID
    (~18 bytes) leave too little room for a device name like
-   `SmartLED-C3` in the *same* packet — NimBLE silently drops whatever
+   `GlowLink` in the *same* packet — NimBLE silently drops whatever
    doesn't fit rather than raising an error. Diagnosed by scanning with
    a generic tool like **nRF Connect for Mobile**: if the device shows
    up as "UNKNOWN" with only Flags visible (no name, no service UUID),
@@ -63,5 +63,5 @@ Work through these roughly in order of likelihood:
    with runtime permission granted).
 6. **Name filter mismatch**: the app only shows devices whose advertised
    name contains `SmartLED` (see `BleConstants.deviceNamePrefix`), which
-   should match firmware's `DEVICE_NAME "SmartLED-C3"`. If you changed
+   should match firmware's `DEVICE_NAME "GlowLink"`. If you changed
    one without the other, they'll silently stop matching.

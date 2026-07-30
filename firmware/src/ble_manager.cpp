@@ -110,7 +110,7 @@ void BleManager::begin(DeviceState* state) {
     // IMPORTANT: a legacy BLE advertising packet is capped at 31 bytes.
     // Flags (~3 bytes) + a 128-bit service UUID (~18 bytes) already use
     // most of that budget, leaving too little room for the device name
-    // ("SmartLED-C3" needs ~13 bytes) in the SAME packet — NimBLE will
+    // ("GlowLink" needs ~13 bytes) in the SAME packet — NimBLE will
     // silently drop whatever doesn't fit rather than erroring. The fix
     // is to put the name in the separate scan response packet instead,
     // which has its own independent 31-byte budget.

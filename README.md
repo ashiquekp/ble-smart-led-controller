@@ -1,4 +1,4 @@
-# BLE Smart RGB / LED Strip Controller
+# GlowLink — BLE Smart RGB / LED Strip Controller
 
 A full-stack smart lighting system: a Flutter mobile app controlling a
 WS2812B LED strip on a Seeed Studio XIAO ESP32-C3, entirely over a custom

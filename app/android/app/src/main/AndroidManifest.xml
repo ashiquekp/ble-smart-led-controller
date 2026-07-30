@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
         android:maxSdkVersion="30" />
     <application
-        android:label="ble_smart_led_controller"
+        android:label="GlowLink"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
