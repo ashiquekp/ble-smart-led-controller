@@ -30,7 +30,7 @@ class PowerToggle extends StatelessWidget {
             Switch(
               value: power,
               onChanged: onChanged,
-              activeColor: AppTheme.accent,
+              activeThumbColor: AppTheme.accent,
             ),
           ],
         ),

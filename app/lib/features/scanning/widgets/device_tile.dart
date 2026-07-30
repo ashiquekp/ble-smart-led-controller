@@ -27,9 +27,9 @@ class DeviceTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
+        leading: const CircleAvatar(
           backgroundColor: AppTheme.surfaceVariant,
-          child: const Icon(Icons.lightbulb_outline, color: AppTheme.accent),
+          child: Icon(Icons.lightbulb_outline, color: AppTheme.accent),
         ),
         title: Text(
           device.name,

@@ -24,10 +24,10 @@ class SpeedSlider extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Speed', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('Speed', style: TextStyle(fontWeight: FontWeight.w600)),
                   Icon(Icons.speed, color: Colors.white54, size: 18),
                 ],
               ),

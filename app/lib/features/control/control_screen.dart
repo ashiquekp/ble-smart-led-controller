@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show Color;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,9 +32,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   void _onColorChanged(Color color) {
     final controller = ref.read(ledControlControllerProvider.notifier);
-    final r = color.red;
-    final g = color.green;
-    final b = color.blue;
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
 
     // Instant local feedback so the wheel never feels laggy...
     controller.previewColor(r, g, b);

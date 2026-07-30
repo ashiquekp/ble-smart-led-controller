@@ -21,7 +21,7 @@ class SchedulingScreen extends ConsumerWidget {
         children: [
           if (schedule.enabled)
             Card(
-              color: Colors.greenAccent.withOpacity(0.1),
+              color: Colors.greenAccent.withValues(alpha: 0.1),
               child: ListTile(
                 leading: const Icon(Icons.check_circle, color: Colors.greenAccent),
                 title: Text(
